@@ -111,7 +111,6 @@ def _parse_set(s: dict, idx: int) -> ExerciseSet:
         reps=s.get("reps"),
         distance_meters=s.get("distance_meters"),
         duration_seconds=s.get("duration_seconds"),
-        rpe=s.get("rpe"),
     )
 
 

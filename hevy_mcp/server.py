@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 import os
 
+import httpx
+
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, Field
@@ -111,6 +113,7 @@ def _parse_set(s: dict, idx: int) -> ExerciseSet:
         reps=s.get("reps"),
         distance_meters=s.get("distance_meters"),
         duration_seconds=s.get("duration_seconds"),
+        rpe=s.get("rpe"),
     )
 
 
@@ -124,8 +127,15 @@ def _parse_exercise(e: dict, idx: int) -> Exercise:
     )
 
 
-def _build_exercise_payload(exercises: list[dict]) -> list[dict]:
-    """Convert user-provided exercise dicts to Hevy API format."""
+def _build_exercise_payload(
+    exercises: list[dict], for_routine: bool = False
+) -> list[dict]:
+    """Convert user-provided exercise dicts to Hevy API format.
+
+    Hevy's routine and workout endpoints accept different set fields:
+    workout sets take ``rpe``; routine sets take ``custom_metric`` and reject
+    ``rpe`` entirely. Pass ``for_routine=True`` when building a routine.
+    """
     result = []
     for ex in exercises:
         entry = {
@@ -134,17 +144,21 @@ def _build_exercise_payload(exercises: list[dict]) -> list[dict]:
             "notes": ex.get("notes", ""),
             "sets": [],
         }
+        if for_routine:
+            entry["rest_seconds"] = ex.get("rest_seconds")
         for s in ex.get("sets", []):
-            entry["sets"].append(
-                {
-                    "type": s.get("type", "normal"),
-                    "weight_kg": s.get("weight_kg"),
-                    "reps": s.get("reps"),
-                    "distance_meters": s.get("distance_meters"),
-                    "duration_seconds": s.get("duration_seconds"),
-                    "rpe": s.get("rpe"),
-                }
-            )
+            set_entry = {
+                "type": s.get("type", "normal"),
+                "weight_kg": s.get("weight_kg"),
+                "reps": s.get("reps"),
+                "distance_meters": s.get("distance_meters"),
+                "duration_seconds": s.get("duration_seconds"),
+            }
+            if for_routine:
+                set_entry["custom_metric"] = s.get("custom_metric")
+            else:
+                set_entry["rpe"] = s.get("rpe")
+            entry["sets"].append(set_entry)
         result.append(entry)
     return result
 
@@ -356,13 +370,17 @@ async def create_routine(
         "routine": {
             "title": title,
             "folder_id": folder_id,
-            "exercises": _build_exercise_payload(exercises),
+            "notes": "",
+            "exercises": _build_exercise_payload(exercises, for_routine=True),
         }
     }
     try:
         data = await hevy_client.post("/routines", json=payload)
         routine_id = data.get("id", "unknown")
         return ActionResult(success=True, message=f"Routine created: {routine_id}")
+    except httpx.HTTPStatusError as exc:
+        body = exc.response.text if exc.response is not None else ""
+        return ActionResult(success=False, message=f"{exc} | Hevy says: {body}")
     except Exception as exc:
         return ActionResult(success=False, message=str(exc))
 
@@ -385,12 +403,16 @@ async def update_routine(
         "routine": {
             "title": title,
             "folder_id": folder_id,
-            "exercises": _build_exercise_payload(exercises),
+            "notes": "",
+            "exercises": _build_exercise_payload(exercises, for_routine=True),
         }
     }
     try:
         await hevy_client.put(f"/routines/{routine_id}", json=payload)
         return ActionResult(success=True, message=f"Routine {routine_id} updated")
+    except httpx.HTTPStatusError as exc:
+        body = exc.response.text if exc.response is not None else ""
+        return ActionResult(success=False, message=f"{exc} | Hevy says: {body}")
     except Exception as exc:
         return ActionResult(success=False, message=str(exc))
 

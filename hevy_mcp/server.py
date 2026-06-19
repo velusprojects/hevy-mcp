@@ -243,7 +243,7 @@ async def get_routine(
 ) -> RoutineDetail:
     """Get full details of a specific routine."""
     data = await hevy_client.get(f"/routines/{routine_id}")
-    r = data
+    r = data.get("routine", data)
     return RoutineDetail(
         id=r["id"],
         title=r.get("title", ""),
@@ -376,7 +376,7 @@ async def create_routine(
     }
     try:
         data = await hevy_client.post("/routines", json=payload)
-        routine_id = data.get("id", "unknown")
+        routine_id = data.get("routine", data).get("id", "unknown")
         return ActionResult(success=True, message=f"Routine created: {routine_id}")
     except httpx.HTTPStatusError as exc:
         body = exc.response.text if exc.response is not None else ""

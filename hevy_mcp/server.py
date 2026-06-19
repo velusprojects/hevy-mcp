@@ -357,6 +357,7 @@ async def update_workout(
 async def create_routine(
     title: str = Field(description="Title for the routine"),
     folder_id: int | None = Field(default=None, description="Optional folder ID"),
+    notes: str = Field(default="", description="Optional routine-level notes/description"),
     exercises: list[dict] = Field(
         description=(
             "List of exercises. Each dict needs: exercise_template_id (str), "
@@ -370,7 +371,7 @@ async def create_routine(
         "routine": {
             "title": title,
             "folder_id": folder_id,
-            "notes": "",
+            "notes": notes or " ",
             "exercises": _build_exercise_payload(exercises, for_routine=True),
         }
     }
@@ -390,6 +391,7 @@ async def update_routine(
     routine_id: str = Field(description="ID of the routine to update"),
     title: str = Field(description="Updated title"),
     folder_id: int | None = Field(default=None, description="Optional folder ID"),
+    notes: str = Field(default="", description="Optional routine-level notes/description"),
     exercises: list[dict] = Field(
         description=(
             "Updated list of exercises. Each dict needs: exercise_template_id (str), "
@@ -403,7 +405,7 @@ async def update_routine(
         "routine": {
             "title": title,
             "folder_id": folder_id,
-            "notes": "",
+            "notes": notes or " ",
             "exercises": _build_exercise_payload(exercises, for_routine=True),
         }
     }

@@ -122,7 +122,7 @@ def _parse_exercise(e: dict, idx: int) -> Exercise:
         index=e.get("index", idx),
         title=e.get("title", ""),
         exercise_template_id=e.get("exercise_template_id", ""),
-        notes=e.get("notes", ""),
+        notes=e.get("notes") or "",
         sets=[_parse_set(s, i) for i, s in enumerate(e.get("sets", []))],
     )
 

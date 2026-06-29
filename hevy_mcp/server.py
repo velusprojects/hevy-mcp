@@ -141,7 +141,7 @@ def _build_exercise_payload(
         entry = {
             "exercise_template_id": ex["exercise_template_id"],
             "superset_id": ex.get("superset_id"),
-            "notes": ex.get("notes", ""),
+            "notes": ex.get("notes") or " ",
             "sets": [],
         }
         if for_routine:

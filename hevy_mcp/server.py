@@ -379,7 +379,10 @@ async def create_routine(
     }
     try:
         data = await hevy_client.post("/routines", json=payload)
-        routine_id = data.get("routine", data).get("id", "unknown")
+        routine = data.get("routine", data)
+        if isinstance(routine, list):
+            routine = routine[0] if routine else {}
+        routine_id = routine.get("id", "unknown") if isinstance(routine, dict) else "unknown"
         return ActionResult(success=True, message=f"Routine created: {routine_id}")
     except httpx.HTTPStatusError as exc:
         body = exc.response.text if exc.response is not None else ""

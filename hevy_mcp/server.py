@@ -258,29 +258,31 @@ async def search_exercises(
     page: int = Field(default=1, description="Page number (1-indexed)"),
 ) -> ExerciseTemplateList:
     """Search exercise templates by name."""
-    data = await hevy_client.get(
+    # Hevy API has no search param, so pull the FULL template library across
+    # all pages and filter the whole set — not just one page (which only ever
+    # matched titles that happened to fall on that page).
+    all_templates = await hevy_client.get_paginated(
         "/exercise_templates",
-        params={"page": page, "pageSize": 10},
+        params={"pageSize": 100},
     )
-    # Filter locally since Hevy API doesn't have a search param
-    templates = []
     query_lower = query.lower()
-    for t in data.get("exercise_templates", []):
-        if query_lower in t.get("title", "").lower():
-            templates.append(
-                ExerciseTemplate(
-                    id=t["id"],
-                    title=t["title"],
-                    type=t.get("type", ""),
-                    primary_muscle_group=t.get("primary_muscle_group", ""),
-                    secondary_muscle_groups=t.get("secondary_muscle_groups", []),
-                    is_custom=t.get("is_custom", False),
-                )
-            )
+    templates = [
+        ExerciseTemplate(
+            id=t["id"],
+            title=t["title"],
+            type=t.get("type", ""),
+            primary_muscle_group=t.get("primary_muscle_group", ""),
+            secondary_muscle_groups=t.get("secondary_muscle_groups", []),
+            is_custom=t.get("is_custom", False),
+        )
+        for t in all_templates
+        if query_lower in t.get("title", "").lower()
+    ]
+    # All matches are returned in one shot now, so pagination is collapsed.
     return ExerciseTemplateList(
         templates=templates,
-        page=data.get("page", page),
-        page_count=data.get("page_count", 1),
+        page=1,
+        page_count=1,
     )
 
 

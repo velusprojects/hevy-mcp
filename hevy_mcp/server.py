@@ -372,6 +372,7 @@ async def create_routine(
     payload = {
         "routine": {
             "title": title,
+            "folder_id": folder_id,
             "notes": notes or " ",
             "exercises": _build_exercise_payload(exercises, for_routine=True),
         }
@@ -405,6 +406,7 @@ async def update_routine(
     payload = {
         "routine": {
             "title": title,
+            "folder_id": folder_id,
             "notes": notes or " ",
             "exercises": _build_exercise_payload(exercises, for_routine=True),
         }

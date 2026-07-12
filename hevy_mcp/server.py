@@ -369,10 +369,11 @@ async def create_routine(
     ),
 ) -> ActionResult:
     """Create a new routine."""
-    payload = {
+payload = {
         "routine": {
             "title": title,
             "notes": notes or " ",
+            "folder_id": folder_id,
             "exercises": _build_exercise_payload(exercises, for_routine=True),
         }
     }

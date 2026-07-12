@@ -369,7 +369,7 @@ async def create_routine(
     ),
 ) -> ActionResult:
     """Create a new routine."""
-payload = {
+    payload = {
         "routine": {
             "title": title,
             "notes": notes or " ",
